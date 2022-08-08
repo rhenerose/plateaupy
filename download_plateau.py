@@ -1,6 +1,10 @@
-import urllib.request, os, sys, subprocess, shutil, glob
+import urllib.request, os, sys, shutil, glob
 from distutils.dir_util import copy_tree
 import argparse
+
+# from pyunpack import Archive
+from zipfile import ZipFile
+import py7zr
 
 datasets = [
 	{	'name':	'plateau-tokyo23ku-citygml-2020',
@@ -138,25 +142,36 @@ def download(url,dstpath):
 	print('  download',url,'to',dstpath)
 	urllib.request.urlretrieve(url,dstpath+'/'+filename)
 
+def extract_zip(srcPath,dstPath):
+	with ZipFile(srcPath, 'r') as archive:
+		archive.extractall(dstPath)
+
+def extract_7z(srcPath,dstPath):
+	with py7zr.SevenZipFile(srcPath, mode='r') as archive:
+		archive.extractall(path=dstPath)
+
 def extract(url,dstpath):
 	os.makedirs(dstpath,exist_ok=True)
 	fname = os.path.splitext(os.path.basename(url))
 	if fname[1] == '.zip':
-		cmd='unzip -o -q {} -d {}'.format(url,dstpath)
+		print('  extract_zip {} to {}'.format(url,dstpath))
+		extract_zip(url,dstpath)
+		return True
 	elif fname[1] == '.7z':
-		cmd='7z x -y -o{} {} > /dev/null'.format(dstpath,url)
+		print('  extract_7z {} to {}'.format(url,dstpath))
+		extract_7z(url,dstpath)
+		return True
 	elif fname[1] == '.png' or fname[1] == '.xml' or fname[1] == '.xlsx' or fname[1] == '.xls':
-		cmd='cp {} {}'.format(url,dstpath)
+		print('  copy file {} to {}'.format(url,dstpath))
+		shutil.copy(url,dstpath)
+		return True
 	else:
 		print('unknown ext',fname[1])
 		return False
-	print('  '+cmd)
-	subprocess.run(cmd,shell=True)
-	return True
+
 def copy_files(url,dstpath):
 	cmd='cp -a {} {}'.format(url,dstpath)
-	print('  '+cmd)
-	subprocess.run(cmd,shell=True)
+	copy_tree_(url,dstpath)
 def copy_tree_(url,dstpath):
 	copy_tree(url,dstpath)
 	print('  copy_tree {} {}'.format(url,dstpath))
