@@ -33,7 +33,7 @@ Python3 (Python 3.6.4, Ubuntu18.04 で確認)
 
 ## インストール
 取得
->git clone --recursive https://github.com/AcculusSasao/plateaupy.git  
+>git clone --recursive https://github.com/rhenerose/plateaupy.git  
 
 モジュールインストール
 
