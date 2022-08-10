@@ -40,9 +40,6 @@ Python3 (Python 3.6.4, Ubuntu18.04 で確認)
 >cd plateaupy  
 >pip install -r requirements.txt  
 
-[Open3D v0.11.2](https://github.com/intel-isl/Open3D/releases/tag/v0.11.2) を取得しインストールしてください。  
->pip install open3d-0.11.2-***.whl
-  
 ## PLATEAU(CityGML)データ
 
 ### PLATEAU 公開データ
