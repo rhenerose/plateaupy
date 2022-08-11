@@ -101,6 +101,86 @@ datasets = [
 			'https://www.geospatial.jp/ckan/dataset/32410073-80ac-4cb0-849c-bad92e83ef69/resource/f5b37e14-8ba8-44f1-b32c-8f97ea640203/download/14382hakone-machicatalog.xlsx',
 		],
 	},
+	# 愛知県
+	{
+		# 名古屋市
+		'name':	'plateau-23100-nagoya-shi-2020',
+		'url' :	'https://www.geospatial.jp/ckan/dataset/plateau-23100-nagoya-shi-2020',
+		'citygml_all': [
+			'https://gic-plateau.s3.ap-northeast-1.amazonaws.com/2020/23100_nagoya-shi_2020_citygml_4_op.zip',
+		],
+		'specs': [
+			# 公式サイトに誤りあり
+			'https://www.geospatial.jp/ckan/dataset/e5b29664-be22-4c3d-a432-609f35a59ff4/resource/828c239f-19c9-474a-b35f-2596a2874d85/download/23100_nagoya-shi_2020catalog.xlsx',
+		],
+	},
+	{
+		# 岡崎市
+		'name':	'plateau-23202-okazaki-shi-2020',
+		'url' :	'https://www.geospatial.jp/ckan/dataset/plateau-23202-okazaki-shi-2020',
+		'citygml_all': [
+			'https://gic-plateau.s3.ap-northeast-1.amazonaws.com/2020/23202_okazaki-shi_2020_citygml_4_op.zip',
+		],
+		'specs': [
+			'https://www.geospatial.jp/ckan/dataset/8d1ba48d-b7a3-4c17-85cb-83b187de43af/resource/73e710c7-c773-4ac8-85b7-56d7a62e8bae/download/23202_okazaki-shi_2020catalog.xlsx',
+		],
+	},
+	{
+		# 津島市 (appviewerではエラーで読めない)
+		'name':	'plateau-23208-tsushima-shi-2020',
+		'url' :	'https://www.geospatial.jp/ckan/dataset/plateau-23208-tsushima-shi-2020',
+		'citygml_all': [
+			'https://gic-plateau.s3.ap-northeast-1.amazonaws.com/2020/23208_taushima-shi_2020_citygml_3_op.zip',
+		],
+		'specs': [
+			'https://www.geospatial.jp/ckan/dataset/8801fca1-561f-435e-b6f5-fa703be50f04/resource/8bd55cdc-506b-47da-be38-35fa50a9ea05/download/23208_tsushima-shi_2020catalog.xlsx',
+		],
+	},
+	{
+		# 安城市
+		'name':	'plateau-23212-annjo-shi-2020',
+		'url' :	'https://www.geospatial.jp/ckan/dataset/plateau-23212-annjo-shi-2020',
+		'citygml_all': [
+			'https://gic-plateau.s3.ap-northeast-1.amazonaws.com/2020/23212_anjo-shi_2020_citygml_3_op.zip',
+		],
+		'specs': [
+			'https://www.geospatial.jp/ckan/dataset/8c08c667-8357-4e37-af79-4942578ba0a1/resource/890030ed-81c1-4bcd-8528-bf95029caa9f/download/23212_annjo-shi_2020catalog.xlsx',
+		],
+	},
+	# 静岡県
+	{
+		# 沼津市
+		'name':	'plateau-22203-numazu-shi-2020',
+		'url' :	'https://www.geospatial.jp/ckan/dataset/plateau-22203-numazu-shi-2020',
+		'citygml_all': [
+			'https://gic-plateau.s3.ap-northeast-1.amazonaws.com/2020/22203_numazu-shi_2020_citygml_3_op.zip',
+		],
+		'specs': [
+			'https://www.geospatial.jp/ckan/dataset/4ee7bc90-a48c-459f-89c9-0bf3278e1899/resource/7a5b79ff-983d-4db5-b12b-d8b9600dbe3b/download/22203_numazu-shi_2020catalog.xlsx',
+		],
+	},
+	{
+		# 掛川市
+		'name':	'plateau-22213-kakegawa-shi-2020',
+		'url' :	'https://www.geospatial.jp/ckan/dataset/plateau-22213-kakegawa-shi-2020',
+		'citygml_all': [
+			'https://gic-plateau.s3.ap-northeast-1.amazonaws.com/2020/22213_kakegawa-shi_2020_citygml_4_op.zip',
+		],
+		'specs': [
+			'https://www.geospatial.jp/ckan/dataset/2b3118e9-5c84-40ce-ac78-f1950d7db0e5/resource/eb8eb255-081a-4ad6-a53e-b5008009ee0f/download/22213_kakegawa-shi_2020catalog.xlsx',
+		],
+	},
+	{
+		# 菊川市
+		'name':	'plateau-22224-kikugawa-city-2020',
+		'url' :	'https://www.geospatial.jp/ckan/dataset/plateau-22224-kikugawa-city-2020',
+		'citygml_all': [
+			'https://gic-plateau.s3.ap-northeast-1.amazonaws.com/2020/22224_kikugawa-shi_2020_citygml_3_op.zip',
+		],
+		'specs': [
+			'https://www.geospatial.jp/ckan/dataset/0db058ae-972f-48d0-b02f-e095d7552999/resource/579d7b7d-06f9-4fcb-912a-613140df0a25/download/22224_kikugawa-shi_2020catalog.xlsx',
+		],
+	},
 	# add more dataset..
 ]
 '''
