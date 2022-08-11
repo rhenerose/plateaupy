@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser(description='plateaupy appviewer')
 parser.add_argument('-paths','--paths',help='list of paths to CityGML dirctories',default=['path_to_citygml'],type=str,nargs='*')
 parser.add_argument('-cmd','--cmd',help='special command [locations,codelists,dumpmeta]',default='',type=str)
 parser.add_argument('-k','--kind',help='gml kind, -1:all, 0:bldg, 1:dem, 2:luse, 3:tran, 4:brid',default=-1,type=int)
-parser.add_argument('-loc','--location',help='location index number',default=-1,type=int)
+parser.add_argument('-loc','--location',help='location index number (multiple)',default=-1,type=int,nargs='+')
 parser.add_argument('-c','--cache',action='store_true', help='use cache data')
 parser.add_argument('-cpath','--cachepath',help='cache directory name',default='cached',type=str)
 parser.add_argument('-color','--color',help='color',default=None,type=float,nargs=3)
@@ -47,8 +47,15 @@ quarter = None
 if args.quarterx is not None and args.quartery is not None:
 	quarter = (args.quartery, args.quarterx)
 options.div6toQuarter = quarter
+
 # load
-pl.loadFiles( bLoadCache=args.cache, cachedir=args.cachepath, kind=args.kind, location=args.location, options=options )
+if type(args.location) is int and args.location == -1:
+	# load all
+	pl.loadFiles( bLoadCache=args.cache, cachedir=args.cachepath, kind=args.kind, location=-1, options=options )
+else:
+	# load multiple locations
+	for location in args.location:
+		pl.loadFiles( bLoadCache=args.cache, cachedir=args.cachepath, kind=args.kind, location=location, options=options )
 
 # special commands
 if args.cmd == 'dumpmeta':
