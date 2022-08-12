@@ -77,10 +77,10 @@ datasets = [
 		'url' :	'https://www.geospatial.jp/ckan/dataset/plateau-14130-kawasaki-shi-2020',
 		'citygml_all': [
 			#'https://gic-plateau.s3-ap-northeast-1.amazonaws.com/2020/14130_kawasaki-shi_CityGML.zip',
-			'https://gic-plateau.s3.ap-northeast-1.amazonaws.com/2020/14130_kawasaki-shi_CityGML2.zip',
+			'https://gic-plateau.s3.ap-northeast-1.amazonaws.com/2020/14130_kawasaki-shi_2020_citygml_5_op.zip',
 		],
 		'specs': [
-			'https://www.geospatial.jp/ckan/dataset/b7d8c630-05ef-4fbd-84e7-96a132204e3f/resource/32cb50b4-0085-47b0-be16-9d122b6e245f/download/14130kawasaki-shicatalog.xlsx',
+			'https://www.geospatial.jp/ckan/dataset/b7d8c630-05ef-4fbd-84e7-96a132204e3f/resource/32cb50b4-0085-47b0-be16-9d122b6e245f/download/14130_kawasaki-shi_2020catalog.xlsx',
 		],
 	},
 	{
