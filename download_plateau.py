@@ -256,6 +256,29 @@ def copy_tree_(url,dstpath):
 	copy_tree(url,dstpath)
 	print('  copy_tree {} {}'.format(url,dstpath))
 
+def move_tree(url,dstpath):
+	# listup source files
+	files = os.listdir(url)
+
+	# check dstpath exists
+	if not os.path.exists(dstpath):
+		# make dstpath directory
+		os.makedirs(dstpath)
+
+	# move files or directories
+	for filePath in files:
+		toPath = os.path.join(dstpath, filePath)
+		# check dstpath
+		if os.path.exists(toPath):
+			# remove dstpath
+			if os.path.isdir(toPath):
+				shutil.rmtree(toPath)
+			if os.path.isfile(toPath):
+				os.remove(toPath)
+		# move file or directory
+		shutil.move(os.path.join(url, filePath), toPath)
+	print('  move_tree {} {}'.format(url,dstpath))
+
 basedir = args.basedir
 ardir = 'archive'
 for db in dbs:
@@ -311,13 +334,9 @@ for db in dbs:
 				extract(_ardir+os.path.basename(xx),_tmpdir)
 				tmpfiles = glob.glob(_tmpdir+'/*')
 				if 'udx' in tmpfiles:
-					copy_tree_( _tmpdir, _alldir )
-					#for yy in tmpfiles:
-					#	copy_files( yy, _alldir )
+					move_tree( _tmpdir, _alldir )
 				elif len(tmpfiles)>0 and os.path.exists(tmpfiles[0]+'/udx'):
-					copy_tree_( tmpfiles[0], _alldir )
-					#for yy in glob.glob(tmpfiles[0]+'/*'):
-					#	copy_files( yy, _alldir )
+					move_tree( tmpfiles[0], _alldir )
 				else:
 					bFound = False
 					for yy in tmpfiles:
@@ -325,12 +344,12 @@ for db in dbs:
 							extract(yy, _tmpdir)
 					for tt in ['codelists','metadata','specification','udx']:
 						for zz in glob.glob(_tmpdir+'/**/'+tt,recursive=True):
-							copy_tree_(zz,_alldir+'/'+tt)
+							move_tree(zz,_alldir+'/'+tt)
 							bFound = True
 					if not bFound:
 						for tt in ['bldg','tran','luse','urf','dem','fld','tnm','lsld','brid','frn']:
 							for zz in glob.glob(_tmpdir+'/**/'+tt,recursive=True):
-								copy_files(zz,_udxdir)
+								move_tree(zz,_udxdir+'/'+tt)
 								bFound = True
 					if not bFound:
 						print('\nerror! unknown dir structure:', tmpfiles)
