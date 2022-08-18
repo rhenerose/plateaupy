@@ -122,12 +122,12 @@ class plobj:
 			_color = np.random.rand(3)
 		return [ m.to_Open3D_TriangleMesh(color=_color, wireonly=wireonly) for m in self.meshes ]
 
-	def write_Open3D_ply_files(self, savepath, color=None):
+	def write_Open3D_files(self, savepath, ext, color=None):
 		import open3d as o3d
 
 		meshes = self.get_Open3D_TriangleMesh(color=color)
 		for idx,m in enumerate(meshes):
-			filename = savepath + '/' + str(self.location) + '_' + self.kindstr + '_' + str(idx) + '.ply'
+			filename = savepath + '/' + str(self.location) + '_' + self.kindstr + '_' + str(idx) + '.' + ext
 			o3d.io.write_triangle_mesh( filename, m)
 
 	def get_Blender_Objects(self, vbase=None):
