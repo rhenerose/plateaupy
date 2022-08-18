@@ -8,12 +8,13 @@ from lxml import etree
 
 class pldem(plobj):
 	def __init__(self,filename=None, options=ploptions()):
+		self.vertices_LatLng = []
 		super().__init__()
 		self.kindstr = 'dem'
 		self.posLists = None	# list of 'posList'(LinearRing) : [*,4,3]
 		if filename is not None:
 			self.loadFile(filename, options=options)
-		
+
 	def loadFile(self,filename, options=ploptions(), num_search_coincident=100):
 		tree, root = super().loadFile(filename)
 		nsmap = self.removeNoneKeyFromDic(root.nsmap)
@@ -66,6 +67,7 @@ class pldem(plobj):
 				if newid < 0:
 					newid = len(mesh.vertices)
 					mesh.vertices.append(y)
+					self.vertices_LatLng.append(self.posLists[xidx, yidx][:3])
 				mesh.triangles[xidx,yidx] = newid
 		# remove 
 		if options.div6toQuarter is not None:
@@ -75,6 +77,35 @@ class pldem(plobj):
 					newtriangles.append( tri )
 			mesh.triangles = np.array(newtriangles)
 			
+		# set texture
+		if options.basemap["use"]:
+			from plateaupy.basemap import TMSDownloader as tms
+			# get basemap image from TileMapService
+			startLoc = tms.GeoCoordinate(*np.min(np.array(self.vertices_LatLng).reshape(-1, 3), axis=0)[:2])
+			endLoc = tms.GeoCoordinate(*np.max(np.array(self.vertices_LatLng).reshape(-1, 3), axis=0)[:2])
+			layer = tms.LayerType.SATELLITE if options.basemap["layer"] == 0 else tms.LayerType.ROADMAP
+			imgBasemap = tms.generateImage(startLoc, endLoc, zoom=18, tms=tms.TMS.GoogleMaps, layer=layer, isCrop=True)
+
+			# seve basemap image
+			basemap_file = f"basemap_{os.path.basename(filename).split('_')[0]}.png"
+			basemap_path = os.path.join(options.texturedir, "basemap")
+			if not os.path.exists(basemap_path):
+				os.makedirs(basemap_path)
+			basemap_file = os.path.join(basemap_path, basemap_file)
+			cv2.imwrite(basemap_file, imgBasemap)
+
+			# set texture file
+			mesh.texture_filename = basemap_file
+
+			pList = np.array(self.vertices_LatLng).reshape(-1, 3)
+			# min-max normalization
+			vmax = np.max(pList, axis=0)
+			vmin = np.min(pList, axis=0)
+			mm_norm = ((np.array(pList) - vmin) / (vmax-vmin))
+			# create uv map
+			mesh.triangle_uvs.extend( [ [mm_norm[x][1], 1 - mm_norm[x][0]] for x in mesh.triangles.reshape((-1)) ] )
+			mesh.triangle_material_ids.extend([0]*len(mesh.triangles))
+
 		self.meshes.append(mesh)
 
 

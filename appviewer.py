@@ -24,6 +24,8 @@ parser.add_argument('-qy','--quartery',help='force to divide mesh area(6) into t
 parser.add_argument('-plypath','--path_write_ply_files',help='path to write plyfiles.',default=None,type=str)
 parser.add_argument('-rec','--recfile',help='a record file name without ext.',default=None,type=str)
 parser.add_argument('-show_wire','--show_wire',action='store_true', help='show wireframe in polygons.')
+parser.add_argument('-basemap','--basemap',action='store_true', help='use map image as dem texture.')
+parser.add_argument('-basemap_layer','--basemap_layer',help='basema layer, 0:satellite, 1:roadmap',default=0,type=int)
 args = parser.parse_args()
 
 # scan paths
@@ -43,6 +45,8 @@ options.bUseLOD0 = args.lod0
 options.bUseLOD2texture = args.lod2texture
 options.texturedir = args.cachepath
 options.bHeightZero = args.zeroheight
+options.basemap["use"] = args.basemap
+options.basemap["layer"] = args.basemap_layer
 quarter = None
 if args.quarterx is not None and args.quartery is not None:
 	quarter = (args.quartery, args.quarterx)

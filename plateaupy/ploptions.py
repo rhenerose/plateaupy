@@ -11,3 +11,4 @@ class ploptions:
 		#  specify (0,0)or(0,1)or(1,0)or(1,1)  as lat,lon
 		#  Now, it is very hard-coded.  Do not use it.
 		self.div6toQuarter = None
+		self.basemap = {"use": False, "layer": 0}
