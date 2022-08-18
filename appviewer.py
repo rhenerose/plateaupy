@@ -21,7 +21,7 @@ parser.add_argument('-lod2texture','--lod2texture',action='store_true', help='sh
 parser.add_argument('-zh','--zeroheight',action='store_true', help='force to set height values as zero.')
 parser.add_argument('-qx','--quarterx',help='force to divide mesh area(6) into the quarter. specify None or 0 or 1', default=None, type=int)
 parser.add_argument('-qy','--quartery',help='force to divide mesh area(6) into the quarter. specify None or 0 or 1', default=None, type=int)
-parser.add_argument('-expath','--export_path',help='path to export files.',default="./export",type=str)
+parser.add_argument('-expath','--export_path',help='path to export files.',default=None,type=str)
 parser.add_argument('-extype','--export_type',help='export type [ply,obj,off,stl,glb]',default='ply',choices=["ply", "obj", "off", "stl", "glb"],type=str)
 parser.add_argument('-rec','--recfile',help='a record file name without ext.',default=None,type=str)
 parser.add_argument('-show_wire','--show_wire',action='store_true', help='show wireframe in polygons.')
