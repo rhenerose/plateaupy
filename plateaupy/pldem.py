@@ -84,7 +84,8 @@ class pldem(plobj):
 			startLoc = tms.GeoCoordinate(*np.min(np.array(self.vertices_LatLng).reshape(-1, 3), axis=0)[:2])
 			endLoc = tms.GeoCoordinate(*np.max(np.array(self.vertices_LatLng).reshape(-1, 3), axis=0)[:2])
 			layer = tms.LayerType.SATELLITE if options.basemap["layer"] == 0 else tms.LayerType.ROADMAP
-			imgBasemap = tms.generateImage(startLoc, endLoc, zoom=18, tms=tms.TMS.GoogleMaps, layer=layer, isCrop=True)
+			zoom = options.basemap["zoom"]
+			imgBasemap = tms.generateImage(startLoc, endLoc, zoom=zoom, tms=tms.TMS.GoogleMaps, layer=layer, isCrop=True)
 
 			# seve basemap image
 			basemap_file = f"basemap_{os.path.basename(filename).split('_')[0]}.png"
