@@ -1,9 +1,26 @@
 # plateaupy
-![plateaupy](doc/plateaupy.png)
+|![plateaupy](doc/plateaupy.png)|![](doc/osaka_multiple_meshcode.png)|![](doc/yokohama_multiple_meshcode.png)|
+| --- | --- | --- |
+|original sample| multiple meshcode & basemap (roadmap)| multiple meshcode & basemap (satellite) |
+|| `-loc 52350309 51357398 51357399 --basemap --basemap_layer 1 --layer_zoom 18` | `-loc 53391530 53391531 53391540 53391541 --basemap --basemap_layer 0 --layer_zoom 18` |
 
 [PLATEAU(CityGML)](https://www.mlit.go.jp/plateau/)のPython版パーサおよびビューア用モジュールです。  
 3D表示は[Open3D](http://www.open3d.org/)または[Blender Python (bpy)](https://docs.blender.org/api/current/index.html)で行います。  
 
+本リポジトリは [AcculusSasao/plateaupy](https://github.com/AcculusSasao/plateaupy) をベースにフォークしたものになります。  
+本家に比べて以下の点が異なります。  
+(上から順にインパクトが大きい)
+
+1. `dem` オブジェクトに対してベースマップをテクスチャとして貼るように修正しました  
+  テクスチャはTMS(Tile Map Service)を使用して衛星画像またはロードマップを取得します (キャッシュ機能付き)
+1. `-loc` オプションに複数のメッシュコードを指定できるように修正しました
+1. Windows環境でも使えるように `cp`, `unzip`, `7z` などのコマンドを使用しないように修正しました
+1. `ply` ファイル出力機能の代わりに `export` 機能を追加しました  
+  `ply` 以外に `obj` , `off` , `stl` , `glb` 形式も出力できます (*1)
+1. データセット展開時に一時ディレクトリからコピーせずに移動するように修正しました (ディスク容量を節約)
+1. Plateauのデータセット定義を別ファイルに外出し、愛知県と静岡県のデータセットを追加しました
+
+(*1) `obj` 出力は頂点が間引かれるようで、想定通りに動作しません <- [open3d issue #1731](https://github.com/isl-org/Open3D/issues/1731)
 ## はじめに
 本ソフトウェアは、[東京23区から新しい世界を創るアイデアソン／ハッカソン](https://asciistartup.connpass.com/event/198420/)で開発されたものです。  
 開発チーム： ***チーム名「影の功労者」，３名***  
@@ -93,27 +110,46 @@ CityGML2020/
 読み込みにしばらく時間がかかります。  
 成功するとOpen3Dの3D画面が起動し、マウス操作できます。ESCキーで終了します。  
 
+`-loc` には複数のメッシュコードを指定できます。
 
-3. 一度読み込んだデータはキャッシュファイルに保存し、次回以降はコマンドオプション -c を使用することで高速に起動します。  
+>python appviewer.py -loc 53392500 53392501  
+
+3. `--basemap` を指定すると、地面(dem)をに対して地図画像を表示します。  
+  地図画像は GoogleMaps の TileMapService から取得します。  
+  このオプションが有効な場合、 `--basemap-layer` で表示する地図画像を選択できます。  
+  (0: 衛星画像 1: ロードマップ)  
+  また、 `--basemap-zoom` で地図のズームレベルを指定できます。  
+  あまり大きすぎると大量のタイルのダウンロードが必要になるため、地図データの取得に時間がかかります。
+  (1タイル1秒程度の時間制限付き ← サーバ制限対策)  
+
+  一度取得したタイル画像はファイルとしてキャッシュされ、同じタイルを読んだ場合には再利用されます。
+
+
+>python appviewer.py -loc 53391540 53391541 -basemap -basemap_layer 0 -basemap_zoom 15  
+
+4. 一度読み込んだデータはキャッシュファイルに保存し、次回以降はコマンドオプション -c を使用することで高速に起動します。  
 
 >python appviewer.py -loc 533925 -c  
 
-4. オプション -k で、gml種類 0:bldg, 1:dem, 2:luse, 3:tran 4:brid を指定できます。  
+5. オプション -k で、gml種類 0:bldg, 1:dem, 2:luse, 3:tran 4:brid を指定できます。  
 
 >python appviewer.py -loc 533925 -c -k 0  
 
-5. オプション -lod2texture でLOD2のテクスチャを表示します。ただし動作が非常に遅いため場所を限定したほうが良いです。  
+6. オプション -lod2texture でLOD2のテクスチャを表示します。ただし動作が非常に遅いため場所を限定したほうが良いです。  
 
 >python appviewer.py -paths ../CityGML_02 -k 0 -loc 53392633 -lod2texture
 
-6. オプション -plypath [ディレクトリ] で、[ディレクトリ]に .ply ファイルを保存します。
->python appviewer.py -loc 533925 -c -plypath tmp
+7. オプション -export_path [ディレクトリ] で、[ディレクトリ]に .ply ファイルを保存します。
+>python appviewer.py -loc 533925 -c -export_path ./export
 
-7. コマンドdumpmetaで、bldg内のメタデータを表示します。  
+-export_type で出力形式を指定できます。 (ply,obj,off,stl,glb)
+>python appviewer.py -loc 533925 -c -export_path ./export -export_type stl
+
+8. コマンドdumpmetaで、bldg内のメタデータを表示します。  
 
 >python appviewer.py -loc 533925 -c -cmd dumpmeta  
 
-8. コマンドcodelistsで、codelists定義を表示します。  
+9. コマンドcodelistsで、codelists定義を表示します。  
 
 >python appviewer.py -cmd codelists
 
@@ -150,7 +186,7 @@ args を必要に応じて修正します。
 4. 道路(tran)の位置情報は高さが全てゼロで、地面(dem)の情報を引っ張ってこなければならない。
 
 あると良さそうなもの
-1. 衛星画像をテクスチャとして地面に貼り付ける
+1. ~~衛星画像をテクスチャとして地面に貼り付ける~~
 2. 動作高速化 (ポリゴン読み込みコードの最適化、ポリゴン数の削減など)
 3. [東京公共交通オープンデータ](https://tokyochallenge.odpt.org/)APIの利用
 
