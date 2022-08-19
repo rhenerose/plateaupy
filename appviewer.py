@@ -27,6 +27,7 @@ parser.add_argument('-rec','--recfile',help='a record file name without ext.',de
 parser.add_argument('-show_wire','--show_wire',action='store_true', help='show wireframe in polygons.')
 parser.add_argument('-basemap','--basemap',action='store_true', help='use map image as dem texture.')
 parser.add_argument('-basemap_layer','--basemap_layer',help='basema layer, 0:satellite, 1:roadmap',default=0,type=int)
+parser.add_argument('-basemap_zoom','--basemap_zoom',help='basema zoom level',default=15,type=int)
 args = parser.parse_args()
 
 # scan paths
@@ -48,6 +49,7 @@ options.texturedir = args.cachepath
 options.bHeightZero = args.zeroheight
 options.basemap["use"] = args.basemap
 options.basemap["layer"] = args.basemap_layer
+options.basemap["zoom"] = args.basemap_zoom
 quarter = None
 if args.quarterx is not None and args.quartery is not None:
 	quarter = (args.quartery, args.quarterx)
