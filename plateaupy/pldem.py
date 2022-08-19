@@ -18,7 +18,8 @@ class pldem(plobj):
 	def loadFile(self,filename, options=ploptions(), num_search_coincident=100):
 		tree, root = super().loadFile(filename)
 		nsmap = self.removeNoneKeyFromDic(root.nsmap)
-		lt,rb = convertMeshcodeToLatLon( os.path.basename(filename).split('_')[0] )
+		self.meshcode = os.path.basename(filename).split('_')[0]
+		lt,rb = convertMeshcodeToLatLon( self.meshcode )
 		#center = (np.array(lt)+np.array(rb))/2
 		center = ( lt[0]*0.8+rb[0]*0.2, lt[1]*0.2+rb[1]*0.8 )
 		# posLists
@@ -79,34 +80,48 @@ class pldem(plobj):
 			
 		# set texture
 		if options.basemap["use"]:
-			from plateaupy.basemap import TMSDownloader as tms
-			# get basemap image from TileMapService
-			startLoc = tms.GeoCoordinate(*np.min(np.array(self.vertices_LatLng).reshape(-1, 3), axis=0)[:2])
-			endLoc = tms.GeoCoordinate(*np.max(np.array(self.vertices_LatLng).reshape(-1, 3), axis=0)[:2])
-			layer = tms.LayerType.SATELLITE if options.basemap["layer"] == 0 else tms.LayerType.ROADMAP
-			zoom = options.basemap["zoom"]
-			imgBasemap = tms.generateImage(startLoc, endLoc, zoom=zoom, tms=tms.TMS.GoogleMaps, layer=layer, isCrop=True)
-
-			# seve basemap image
-			basemap_file = f"basemap_{os.path.basename(filename).split('_')[0]}.png"
-			basemap_path = os.path.join(options.texturedir, "basemap")
-			if not os.path.exists(basemap_path):
-				os.makedirs(basemap_path)
-			basemap_file = os.path.join(basemap_path, basemap_file)
-			cv2.imwrite(basemap_file, imgBasemap)
-
-			# set texture file
-			mesh.texture_filename = basemap_file
-
-			pList = np.array(self.vertices_LatLng).reshape(-1, 3)
-			# min-max normalization
-			vmax = np.max(pList, axis=0)
-			vmin = np.min(pList, axis=0)
-			mm_norm = ((np.array(pList) - vmin) / (vmax-vmin))
-			# create uv map
-			mesh.triangle_uvs.extend( [ [mm_norm[x][1], 1 - mm_norm[x][0]] for x in mesh.triangles.reshape((-1)) ] )
-			mesh.triangle_material_ids.extend([0]*len(mesh.triangles))
+			self.setBasemapTexture(mesh, options)
 
 		self.meshes.append(mesh)
 
+	def setBasemapTexture(self, mesh: plmesh=None, options: ploptions=ploptions()):
+		"""set texture for basemap
 
+		Args:
+			mesh (plmesh, optional): mesh object. if mesh is None, use first mesh object in pldem class. (may be one mesh only) Defaults to None.
+			options (ploptions, optional): ploptions object. Defaults to ploptions().
+		"""		
+		if mesh is None:
+			if len(self.meshes) > 0:
+				mesh = self.meshes[0]
+			else:
+				return
+
+		# set texture
+		from plateaupy.basemap import TMSDownloader as tms
+		# get basemap image from TileMapService
+		startLoc = tms.GeoCoordinate(*np.min(np.array(self.vertices_LatLng).reshape(-1, 3), axis=0)[:2])
+		endLoc = tms.GeoCoordinate(*np.max(np.array(self.vertices_LatLng).reshape(-1, 3), axis=0)[:2])
+		layer = tms.LayerType.SATELLITE if options.basemap["layer"] == 0 else tms.LayerType.ROADMAP
+		zoom = options.basemap["zoom"]
+		imgBasemap = tms.generateImage(startLoc, endLoc, zoom=zoom, tms=tms.TMS.GoogleMaps, layer=layer, isCrop=True)
+
+		# seve basemap image
+		basemap_file = f"basemap_{self.meshcode}.png"
+		basemap_path = os.path.join(options.texturedir, "basemap")
+		if not os.path.exists(basemap_path):
+			os.makedirs(basemap_path)
+		basemap_file = os.path.join(basemap_path, basemap_file)
+		cv2.imwrite(basemap_file, imgBasemap)
+
+		# set texture file
+		mesh.texture_filename = basemap_file
+
+		pList = np.array(self.vertices_LatLng).reshape(-1, 3)
+		# min-max normalization
+		vmax = np.max(pList, axis=0)
+		vmin = np.min(pList, axis=0)
+		mm_norm = ((np.array(pList) - vmin) / (vmax-vmin))
+		# create uv map
+		mesh.triangle_uvs.extend( [ [mm_norm[x][1], 1 - mm_norm[x][0]] for x in mesh.triangles.reshape((-1)) ] )
+		mesh.triangle_material_ids.extend([0]*len(mesh.triangles))
