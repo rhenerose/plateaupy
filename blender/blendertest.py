@@ -1,3 +1,6 @@
+import os
+import sys
+sys.path.append(os.path.abspath(".."))
 import bpy
 import plateaupy
 import math
@@ -12,16 +15,16 @@ if True:
 	bpy.ops.object.light_add(location=(0.0,0.0,2.0))
 	#camera add
 	bpy.ops.object.camera_add(location=(5.0,0.0,0.0))
-	bpy.data.objects['Camera'].rotation_euler = (math.pi*1/2, 0, math.pi*1/2)
+	bpy.data.objects['カメラ'].rotation_euler = (math.pi*1/2, 0, math.pi*1/2)
 
 ##################
 #####  args  #####
 ##################
-paths = ['../CityGML_01','../CityGML_02']
+paths = ['CityGML2020/plateau-27100-osaka-shi-2020']
 cache = False
 cachepath = 'cached_blender'
 kind = plateaupy.plobj.ALL
-location = 533925
+location = 51357399
 options = plateaupy.ploptions()
 ##################
 

@@ -1,6 +1,7 @@
 plateaupy/thirdparty/*
 CityGML2020
 cached
+cached_blender
 export
 
 # Byte-compiled / optimized / DLL files

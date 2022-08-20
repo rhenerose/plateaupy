@@ -1,0 +1,14 @@
+numpy
+argparse
+lxml
+# opencv-python
+opencv-contrib-python==4.5.4.60
+scipy >= 1.5.4
+
+# open3d
+# check wheel file for python3.10
+# http://www.open3d.org/docs/latest/getting_started.html#development-version-pip
+https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-0.15.2+534b047-cp310-cp310-win_amd64.whl
+#triangle
+
+py7zr
