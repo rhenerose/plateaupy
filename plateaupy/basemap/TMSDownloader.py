@@ -3,9 +3,11 @@ import sys
 import time
 
 from enum import Enum
-from typing import Tuple
 from urllib import request
 import math
+
+import queue
+from threading import Thread
 
 import numpy as np
 import cv2
@@ -96,6 +98,25 @@ class TMSDownloader:
                 self.lat - other.lat, self.lng - other.lng
             )
 
+    class TileQueue:
+        def __init__(
+            self, row: int, col: int, url: str, fileName: str, cached: bool
+        ) -> None:
+            """TileQueue
+
+            Args:
+                row (int): tile row
+                col (int): tile column
+                url (str): dounload url
+                fileName (str): tile fila path
+                cached (bool): cached flag
+            """
+            self.row = row
+            self.col = col
+            self.url = url
+            self.fileName = fileName
+            self.cached = cached
+
     @classmethod
     def getBBox(self, a, b):
         """Get bounding box from two geo coordinates
@@ -105,7 +126,7 @@ class TMSDownloader:
             b (GeoCoordinate): 2nd GeoCoordinate
 
         Returns:
-            Tuple[GeoCoordinate. GeoCoordinate]: _description_
+            tuple[GeoCoordinate. GeoCoordinate]: bounding box
         """
         return (
             TMSDownloader.GeoCoordinate(max(a.lat, b.lat), min(a.lng, b.lng)),
@@ -113,7 +134,7 @@ class TMSDownloader:
         )
 
     @classmethod
-    def getXY(self, loc: GeoCoordinate, zoom: int) -> Tuple[int, int]:
+    def getXY(self, loc: GeoCoordinate, zoom: int) -> tuple[int, int]:
         """Get tile coordinate(col, row) from geo coordinate and zoom level
 
         Args:
@@ -138,7 +159,7 @@ class TMSDownloader:
         return int(row), int(col)
 
     @classmethod
-    def getLatLng(self, row: int, col: int, zoom: int) -> Tuple[float, float]:
+    def getLatLng(self, row: int, col: int, zoom: int) -> tuple[float, float]:
         """Get geo coordinate from tile coordinate and zoom level
 
         Args:
@@ -197,15 +218,17 @@ class TMSDownloader:
 
         return url
 
-    def downloadTile(url: str) -> bytes:
+    @classmethod
+    def downloadTile(self, tileQueues: list[TileQueue]) -> list[TileQueue]:
         """Download tile from URL
 
         Args:
-            url (str): download tile URL
+            tileQueues (List[TileQueue]): download tile queue list
 
         Returns:
-            bytes: downloaded data
+            list[TileQueue]: queue list
         """
+
         headers = {
             "Accept": "image/png,image/*;q=0.8,*/*;q=0.5",
             "Accept-Charset": "ISO-8859-1,utf-8;q=0.7,*;q=0.7",
@@ -214,13 +237,73 @@ class TMSDownloader:
             "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0",
         }
 
-        buff = None
-        # download request
-        req = request.Request(url, headers=headers)
-        with request.urlopen(req) as res:
-            buff = res.read()
+        class Worker(Thread):
+            def __init__(self, request_queue):
+                Thread.__init__(self)
+                self.queue = request_queue
+                self.results = []
 
-        return buff
+            def run(self):
+                while True:
+                    # get request from queue
+                    q = self.queue.get()
+                    if q is None:
+                        break
+
+                    # check cache
+                    if not q.cached:
+                        # download tile
+                        buff = None
+                        print(f"-- fetch {q.url} to {q.fileName}")
+
+                        # request download tile
+                        try:
+                            req = request.Request(q.url, headers=headers)
+                            with request.urlopen(req) as res:
+                                buff = res.read()
+
+                            # save image cache
+                            if buff is not None:
+                                with open(q.fileName, "wb") as f:
+                                    f.write(buff)
+                                    q.cached = True
+
+                            # wait a seconds
+                            time.sleep(0.1 + np.random.random())
+                        except Exception as e:
+                            print("--", q.url, "to", q.fileName, "->", e)
+                    else:
+                        # already cached
+                        print("-- cached", q.fileName)
+
+                    self.queue.task_done()
+                    self.results.append(q)
+
+        result = []
+        n_wokers = 5
+        # create queue
+        q = queue.Queue()
+        for url in tileQueues:
+            q.put(url)
+        for _ in range(n_wokers):
+            q.put(None)
+
+        # create workers
+        workers = []
+        for _ in range(n_wokers):
+            worker = Worker(q)
+            worker.start()
+            workers.append(worker)
+
+        # wait until all worker finished
+        for worker in workers:
+            worker.join()
+
+        # combine results
+        for worker in workers:
+            result.extend(worker.results)
+
+        return result
 
     @classmethod
     def generateImage(
@@ -315,6 +398,7 @@ class TMSDownloader:
         # print(f"{dx * endDiff.lat}, {dy * endDiff.lng}")
 
         # get tile images
+        tileQueues = []
         for x in range(0, tile_col_num):
             for y in range(0, tile_row_num):
                 col = x + start_col
@@ -327,63 +411,52 @@ class TMSDownloader:
 
                 # check cache
                 if no_cache or not os.path.exists(filename):
-                    # request download tile
-                    print(
-                        f"-- fetch ({(x * tile_row_num) + y + 1} / {tile_col_num * tile_row_num})",
-                        url,
-                        "to",
-                        filename,
+                    tileQueues.append(
+                        TMSDownloader.TileQueue(row, col, url, filename, False)
+                    )
+                else:
+                    tileQueues.append(
+                        TMSDownloader.TileQueue(row, col, url, filename, True)
                     )
 
-                    # download tile
-                    buff = None
-                    try:
-                        buff = self.downloadTile(url)
-                    except Exception as e:
-                        print("--", url, "to", filename, "->", e)
-                        continue
+        ##############################
+        # multi thread download
+        ##############################
+        results = self.downloadTile(tileQueues)
 
-                    # save image cache
-                    isCached = False
-                    if buff is not None:
-                        with open(filename, "wb") as f:
-                            f.write(buff)
-                        isCached = True
+        # stitch tiles together
+        for tileQ in results:
+            try:
+                if tileQ.cached:
+                    filename = tileQ.fileName
+                    x = tileQ.col - start_col
+                    y = tileQ.row - start_row
+                    # read image
+                    imgTile = cv2.imread(filename)
 
-                    # wait a seconds
-                    time.sleep(0.1 + np.random.random())
-                else:
-                    isCached = True
-                    print("-- cached", filename)
+                    # draw grid
+                    if draw_grid:
+                        imgTile = cv2.rectangle(
+                            imgTile,
+                            (y, x),
+                            (y + self.tile_size, x + self.tile_size),
+                            (0, 255, 0),
+                            2,
+                        )
 
-                try:
-                    if isCached:
-                        # read image
-                        imgTile = cv2.imread(filename)
+                    # merge image
+                    merge_pos_x = x * self.tile_size
+                    merge_pos_y = y * self.tile_size
+                    imgMap[
+                        merge_pos_y : merge_pos_y + imgTile.shape[0],
+                        merge_pos_x : merge_pos_x + imgTile.shape[1],
+                    ] = imgTile
 
-                        # draw grid
-                        if draw_grid:
-                            imgTile = cv2.rectangle(
-                                imgTile,
-                                (y, x),
-                                (y + self.tile_size, x + self.tile_size),
-                                (0, 255, 0),
-                                2,
-                            )
+                    del imgTile
 
-                        # merge image
-                        merge_pos_x = x * self.tile_size
-                        merge_pos_y = y * self.tile_size
-                        imgMap[
-                            merge_pos_y : merge_pos_y + imgTile.shape[0],
-                            merge_pos_x : merge_pos_x + imgTile.shape[1],
-                        ] = imgTile
-
-                        del imgTile
-
-                except Exception as e:
-                    print(f"-- {e}, error {filename}")
-                    continue
+            except Exception as e:
+                print(f"-- {e}, error {filename}")
+                continue
 
         if isCrop:
             # cv2.imwrite("map_.jpg", imgMap)
@@ -402,7 +475,7 @@ if __name__ == "__main__":
     startLoc = TMSDownloader.GeoCoordinate(34.67042882707316, 135.47453288400564)
     endLoc = TMSDownloader.GeoCoordinate(34.668376317727486, 135.47727372077304)
 
-    # Tokyo Station (Tokyo)
+    # # Tokyo Station (Tokyo)
     # startLoc = TMSDownloader.GeoCoordinate(35.68479157138042, 139.76548660257424)
     # endLoc = TMSDownloader.GeoCoordinate(35.67621276216543, 139.76971984744708)
 
@@ -440,3 +513,9 @@ if __name__ == "__main__":
         # Save the image
         cv2.imwrite("map.jpg", img)
         print("Output image -> 'map.jpg'")
+
+        print("Press any key to exit...")
+        cv2.imshow("map", img)
+        key = cv2.waitKey(0) & 0xFF
+        cv2.destroyAllWindows()
+        sys.exit(0)
