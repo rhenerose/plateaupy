@@ -48,6 +48,31 @@ class plmesh:
 		mesh.from_pydata( vertices, [], triangles )
 		mesh.update(calc_edges=True)
 		obj = bpy.data.objects.new(name=namestr,object_data=mesh)
+
+		# set Texture
+		if self.texture_filename is not None:
+			print(f"texture_filename = {self.texture_filename}")
+
+			# Create uv laeyer
+			new_uv = mesh.uv_layers.new(name="UVMap")
+			print(len(new_uv.data), len(self.triangle_uvs))
+			for loop in mesh.vertices.data.loops:
+				new_uv.data[loop.index].uv = np.array(self.triangle_uvs[loop.index]) * (1.0, -1.0)   # flip y
+
+			# Create material 
+			mat_name = "TextureMaterial"
+			mat = bpy.data.materials.new(mat_name)
+
+			mat.use_nodes = True
+			bsdf = mat.node_tree.nodes["Principled BSDF"]
+			texImage = mat.node_tree.nodes.new('ShaderNodeTexImage')
+			texImage.image = bpy.data.images.load(os.path.abspath(self.texture_filename))
+			mat.node_tree.links.new(bsdf.inputs['Base Color'], texImage.outputs['Color'])
+
+			# # Add material to object
+			obj.data.materials.append(mat)
+
+
 		return obj
 
 class plobj:
