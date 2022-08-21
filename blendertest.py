@@ -19,7 +19,15 @@ if True:
     bpy.ops.object.light_add(location=(0.0, 0.0, 2.0))
     # camera add
     bpy.ops.object.camera_add(location=(5.0, 0.0, 0.0))
-    bpy.data.objects["カメラ"].rotation_euler = (math.pi * 1 / 2, 0, math.pi * 1 / 2)
+    bpy.data.objects[bpy.data.cameras[-1].name].rotation_euler = (math.pi * 1 / 2, 0, math.pi * 1 / 2)
+
+    # set view3d
+    view3d = [x for x in bpy.data.screens["Layout"].areas if x.type == "VIEW_3D"][0]
+    view3d.spaces[0].region_3d.view_perspective = "PERSP"
+    view3d.spaces[0].shading.type = 'MATERIAL'
+    view3d.spaces[0].lens = 50
+    # view3d.spaces[0].clip_start = 100
+    view3d.spaces[0].clip_end = 10000000
 
 ##################
 #      args
