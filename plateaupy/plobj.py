@@ -56,8 +56,8 @@ class plmesh:
 			# Create uv laeyer
 			new_uv = mesh.uv_layers.new(name="UVMap")
 			print(len(new_uv.data), len(self.triangle_uvs))
-			for loop in mesh.vertices.data.loops:
-				new_uv.data[loop.index].uv = np.array(self.triangle_uvs[loop.index]) * (1.0, -1.0)   # flip y
+			for idx, uv in enumerate(self.triangle_uvs):
+				new_uv.data[idx].uv = np.array(uv) * (1.0, -1.0)   # flip y
 
 			# Create material 
 			mat_name = "TextureMaterial"
