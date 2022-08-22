@@ -42,6 +42,39 @@ def convertPolarToCartsian( lat, lon, hei ):
 	Z = ( N * (1 - e*e) + h ) * sinLat
 	return np.array([X,Y,Z])
 
+def convertCartsianToPolar( x, y, z ):
+	# `convertPolarToCartsian` がジオイド高未考慮のため不可逆的
+
+	# Semi-mejor axis  [in meter]
+	a = 6378137
+	# Flattening
+	f = 1 / 298.257222101
+	b = a * (1. - f)
+
+	# Eccentricity
+	e = math.sqrt(2. * f - f * f)
+	e2 = e * e
+
+	P = math.sqrt(x * x + y * y)
+	lng = math.atan2(y, x)
+
+	lat0 = math.atan2(z, P * (1. - e2))
+	while True:
+		# 卯酉線曲率半径
+		sini = math.sin(lat0)
+		N = a / math.sqrt(1. - e2 * sini * sini)
+		lat = math.atan2(z, P - e2 * N * math.cos(lat0))
+		# 収束条件 10e-12 以下
+		if abs(lat - lat0) <= 1e-12:
+			break
+		lat0 = lat
+
+	sini = math.sin(lat)
+	N = a / math.sqrt(1. - e2 * sini * sini)
+	hei = P / math.cos(lat) - N
+
+	return np.array([math.degrees(lat), math.degrees(lng), hei])
+
 # return left-top (latitude,longitude) and right-bottom
 def convertMeshcodeToLatLon( meshcode ):
 	smeshcode = str(meshcode)
