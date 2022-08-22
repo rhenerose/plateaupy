@@ -308,6 +308,9 @@ class plbldg(plobj):
 							mesh.triangle_uvs.extend( [ np.zeros((2)) for x in range(len(triangles)*3) ] )
 							mesh.triangle_material_ids.extend( [0]*len(triangles) )
 			if options.bUseLOD2texture:
+				if len(mesh.triangle_uvs):
+					# flip uvs y
+					mesh.triangle_uvs = (np.array([0, 1]) - mesh.triangle_uvs) * np.array([-1, 1])
 				self.meshes.append(mesh)
 		if not options.bUseLOD2texture:
 			self.meshes.append(mesh)
