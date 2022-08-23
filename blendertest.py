@@ -45,6 +45,7 @@ location = [
 options = plateaupy.ploptions()
 options.texturedir = cachepath
 options.basemap = {"use": True, "layer": 0, "zoom": 18}
+options.bUseLOD2texture = True
 ##################
 
 # scan paths

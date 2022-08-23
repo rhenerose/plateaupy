@@ -278,7 +278,10 @@ class plbldg(plobj):
 						if options.bUseLOD2texture:
 							if key in b.partex.targets.keys():
 								mesh.triangle_uvs.extend( [ b.partex.targets[key][0,x] for x in triangles.reshape((-1)) ] )
-								mesh.triangle_material_ids.extend( [0]*len(triangles) )
+							else:
+								# no key (add dummy uv)
+								mesh.triangle_uvs.extend( np.zeros([triangles.size, 2]) )
+							mesh.triangle_material_ids.extend( [0]*len(triangles) )
 				# wall
 				for key, value in b.lod2wall.items():
 					vertices = [ convertPolarToCartsian( *x ) for x in value[0] ]
@@ -292,7 +295,10 @@ class plbldg(plobj):
 						if options.bUseLOD2texture:
 							if key in b.partex.targets.keys():
 								mesh.triangle_uvs.extend( [ b.partex.targets[key][0,x] for x in triangles.reshape((-1)) ] )
-								mesh.triangle_material_ids.extend( [0]*len(triangles) )
+							else:
+								# no key (add dummy uv)
+								mesh.triangle_uvs.extend( np.zeros([triangles.size, 2]) )
+							mesh.triangle_material_ids.extend( [0]*len(triangles) )
 			else:
 				# LOD1
 				for plist in b.lod1Solid:
