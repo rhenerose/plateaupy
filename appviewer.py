@@ -28,6 +28,7 @@ parser.add_argument('-show_wire','--show_wire',action='store_true', help='show w
 parser.add_argument('-basemap','--basemap',action='store_true', help='use map image as dem texture.')
 parser.add_argument('-basemap_layer','--basemap_layer',help='basema layer, 0:satellite, 1:roadmap',default=0,type=int)
 parser.add_argument('-basemap_zoom','--basemap_zoom',help='basema zoom level',default=15,type=int)
+parser.add_argument('-useLeargeArea','--useLeargeArea',action='store_true', help='use learge area map if not found data.')
 args = parser.parse_args()
 
 # scan paths
@@ -50,6 +51,7 @@ options.bHeightZero = args.zeroheight
 options.basemap["use"] = args.basemap
 options.basemap["layer"] = args.basemap_layer
 options.basemap["zoom"] = args.basemap_zoom
+options.useLeargeArea = args.useLeargeArea
 quarter = None
 if args.quarterx is not None and args.quartery is not None:
 	quarter = (args.quartery, args.quarterx)

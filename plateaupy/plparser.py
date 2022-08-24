@@ -94,6 +94,11 @@ class plparser:
 				for filename in self.filenames_dem:
 					if plobj.getLocationFromFilename(filename) == location:
 						filenames_dem.append(filename)
+				if options.useLeargeArea and len(filenames_dem) == 0:
+					# use learge area
+					for filename in self.filenames_dem:
+						if plobj.getLocationFromFilename(filename) == location // 100:
+							filenames_dem.append(filename)
 		if kind==plobj.LUSE or kind==plobj.ALL:
 			if location < 0:
 				filenames_luse = self.filenames_luse
@@ -103,6 +108,11 @@ class plparser:
 				for filename in self.filenames_luse:
 					if plobj.getLocationFromFilename(filename) == location:
 						filenames_luse.append(filename)
+				if options.useLeargeArea and len(filenames_luse) == 0:
+					# use learge area
+					for filename in self.filenames_luse:
+						if plobj.getLocationFromFilename(filename) == location // 100:
+							filenames_luse.append(filename)
 		if kind==plobj.TRAN or kind==plobj.ALL:
 			if location < 0:
 				filenames_tran = self.filenames_tran
@@ -112,6 +122,11 @@ class plparser:
 				for filename in self.filenames_tran:
 					if plobj.getLocationFromFilename(filename) == location:
 						filenames_tran.append(filename)
+				if options.useLeargeArea and len(filenames_tran) == 0:
+					# use learge area
+					for filename in self.filenames_tran:
+						if plobj.getLocationFromFilename(filename) == location // 100:
+							filenames_tran.append(filename)
 		# load files
 		if bLoadCache:
 			print('### loading cache data..')

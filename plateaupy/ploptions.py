@@ -12,3 +12,5 @@ class ploptions:
 		#  Now, it is very hard-coded.  Do not use it.
 		self.div6toQuarter = None
 		self.basemap = {"use": False, "layer": 0, "zoom": 15}
+
+		self.useLeargeArea = False
