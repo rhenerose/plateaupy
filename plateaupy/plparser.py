@@ -151,25 +151,37 @@ class plparser:
 			for f in filenames_bldg:
 				if (options.div6toQuarter is not None) and (options.div6toQuarter != plobj.get6QuarterFromFilename(f)):
 					continue
-				obj = plbldg(f, options=options)
-				self.bldg[obj.location] = obj
-				obj.save(plobj.getCacheFilename(cachedir,f))
+				if not plobj.getLocationFromFilename(f) in self.bldg.keys():
+					obj = plbldg(f, options=options)
+					self.bldg[obj.location] = obj
+					obj.save(plobj.getCacheFilename(cachedir,f))
+				else:
+					print("already loaded!!")
 			print('# dem')
 			for f in filenames_dem:
-				obj = pldem(f, options=options)
-				self.dem[obj.location] = obj
-				obj.save(plobj.getCacheFilename(cachedir,f))
+				if not plobj.getLocationFromFilename(f) in self.dem.keys():
+					obj = pldem(f, options=options)
+					self.dem[obj.location] = obj
+					obj.save(plobj.getCacheFilename(cachedir,f))
+				else:
+					print("already loaded!!")
 			print('# luse')
 			for f in filenames_luse:
-				obj = plluse(f, options=options)
-				self.luse[obj.location] = obj
-				obj.save(plobj.getCacheFilename(cachedir,f))
+				if not plobj.getLocationFromFilename(f) in self.luse.keys():
+					obj = plluse(f, options=options)
+					self.luse[obj.location] = obj
+					obj.save(plobj.getCacheFilename(cachedir,f))
+				else:
+					print("already loaded!!")
 			print('# tran')
 			for f in filenames_tran:
-				#obj = pltran(f, self.dem[ plobj.getLocationFromFilename(f) ])
-				obj = pltran(f, options=options)
-				self.tran[obj.location] = obj
-				obj.save(plobj.getCacheFilename(cachedir,f))
+				if not plobj.getLocationFromFilename(f) in self.tran.keys():
+					#obj = pltran(f, self.dem[ plobj.getLocationFromFilename(f) ])
+					obj = pltran(f, options=options)
+					self.tran[obj.location] = obj
+					obj.save(plobj.getCacheFilename(cachedir,f))
+				else:
+					print("already loaded!!")
 
 	def get_Open3D_TriangleMesh(self, color=None, kindbits=255, wireonly=False):
 		meshes = []
