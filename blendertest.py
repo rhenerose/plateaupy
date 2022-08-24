@@ -19,7 +19,9 @@ if True:
     bpy.ops.object.light_add(location=(0.0, 0.0, 2.0))
     # camera add
     bpy.ops.object.camera_add(location=(5.0, 0.0, 0.0))
-    bpy.data.objects[bpy.data.cameras[-1].name].rotation_euler = (math.pi * 1 / 2, 0, math.pi * 1 / 2)
+    for obj in bpy.data.objects:
+        if obj.type == "CAMERA":
+            obj.rotation_euler = (math.pi * 1 / 2, 0, math.pi * 1 / 2)
 
     # set view3d
     view3d = [x for x in bpy.data.screens["Layout"].areas if x.type == "VIEW_3D"][0]
@@ -46,6 +48,7 @@ options = plateaupy.ploptions()
 options.texturedir = cachepath
 options.basemap = {"use": True, "layer": 0, "zoom": 18}
 options.bUseLOD2texture = True
+options.useLeargeArea = True
 ##################
 
 # scan paths
