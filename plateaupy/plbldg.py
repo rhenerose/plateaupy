@@ -81,6 +81,127 @@ class plbldg(plobj):
 		if filename is not None:
 			self.loadFile(filename, options=options)
 
+	def createBuilding(self, bld, partex, nsmap, options):
+		b = Building()
+		# gml:id
+		b.id = bld.attrib['{'+nsmap['gml']+'}id']
+		# stringAttribute
+		stringAttributes = bld.xpath('.//gen:stringAttribute', namespaces=nsmap)
+		for at in stringAttributes:
+			b.attr[at.attrib['name']] = at.getchildren()[0].text
+		# genericAttributeSet
+		genericAttributeSets = bld.xpath('.//gen:genericAttributeSet', namespaces=nsmap)
+		for at in genericAttributeSets:
+			vals = dict()
+			for ch in at.getchildren():
+				vals[ ch.attrib['name'] ] = ch.getchildren()[0].text
+			b.attr[at.attrib['name']] = vals
+		# usage
+		for at in bld.xpath('.//bldg:usage', namespaces=nsmap):
+			b.usage = at.text
+		# measuredHeight
+		for at in bld.xpath('.//bldg:measuredHeight', namespaces=nsmap):
+			b.measuredHeight = at.text
+		# storeysAboveGround
+		for at in bld.xpath('.//bldg:storeysAboveGround', namespaces=nsmap):
+			b.storeysAboveGround = at.text
+		# storeysBelowGround
+		for at in bld.xpath('.//bldg:storeysBelowGround', namespaces=nsmap):
+			b.storeysBelowGround = at.text
+		# address
+		try:	# there are 2 names: 'xAL' and 'xal'..
+			for at in bld.xpath('.//bldg:address/core:Address/core:xalAddress/xAL:AddressDetails/xAL:Address', namespaces=nsmap):
+				b.address = at.text
+		except lxml.etree.XPathEvalError as e:
+			for at in bld.xpath('.//bldg:address/core:Address/core:xalAddress/xal:AddressDetails/xal:Address', namespaces=nsmap):
+				b.address = at.text
+		# buildingDetails
+		for at in bld.xpath('.//uro:buildingDetails/uro:BuildingDetails', namespaces=nsmap):
+			for ch in at.getchildren():
+				tag = ch.tag
+				tag = tag[ tag.rfind('}')+1: ]
+				b.buildingDetails[tag] = ch.text
+		# extendedAttribute
+		for at in bld.xpath('.//uro:extendedAttribute/uro:KeyValuePair', namespaces=nsmap):
+			ch = at.getchildren()
+			b.extendedAttribute[ch[0].text] = ch[1].text
+		# lod0RoofEdge
+		vals = bld.xpath('.//bldg:lod0RoofEdge/gml:MultiSurface/gml:surfaceMember/gml:Polygon/gml:exterior/gml:LinearRing/gml:posList', namespaces=nsmap)
+		b.lod0RoofEdge = [str2floats(v).reshape((-1,3)) for v in vals]
+		# lod1Solid
+		vals = bld.xpath('.//bldg:lod1Solid/gml:Solid/gml:exterior/gml:CompositeSurface/gml:surfaceMember/gml:Polygon/gml:exterior/gml:LinearRing/gml:posList', namespaces=nsmap)
+		b.lod1Solid = [str2floats(v).reshape((-1,3)) for v in vals]
+		minheight = 0
+		if options.bHeightZero:
+			# calc min height
+			minheight = 10000
+			for x in b.lod1Solid:
+				if minheight > np.min(x[:,2]):
+					minheight = np.min(x[:,2])
+			if b.storeysBelowGround is not None:
+				minheight = minheight + (int(b.storeysBelowGround) * _floorheight)
+			if minheight == 10000:
+				minheight = 0
+			for x in b.lod1Solid:
+				x[:,2] -= minheight
+		# lod2Solid
+		#  nothing to do for parsing <bldg:lod2Solid>
+		# lod2MultiSurface : Ground, Roof, Wall
+		for bb in bld.xpath('.//bldg:boundedBy/bldg:GroundSurface/bldg:lod2MultiSurface/gml:MultiSurface/gml:surfaceMember/gml:Polygon', namespaces=nsmap):
+			polyid = '#' + bb.attrib['{'+nsmap['gml']+'}id']
+			vals = bb.xpath('.//gml:exterior/gml:LinearRing/gml:posList', namespaces=nsmap)
+			surf = [str2floats(v).reshape((-1,3)) for v in vals]
+			if options.bHeightZero:
+				if minheight == 0:
+					# calc min height
+					minheight = 10000
+					for x in surf:
+						if minheight > np.min(x[:,2]):
+							minheight = np.min(x[:,2])
+					if b.storeysBelowGround is not None:
+						minheight = minheight + (int(b.storeysBelowGround) * _floorheight)
+					if minheight == 10000:
+						minheight = 0
+				for x in surf:
+					x[:,2] -= minheight
+			b.lod2ground[polyid] = surf
+			app = appParameterizedTexture.search_list( partex, polyid )
+			if app is not None:
+				if b.partex.imageURI is None:
+					b.partex = app
+				#elif b.partex.imageURI != app.imageURI:
+				#	print('error')
+		for bb in bld.xpath('.//bldg:boundedBy/bldg:RoofSurface/bldg:lod2MultiSurface/gml:MultiSurface/gml:surfaceMember/gml:Polygon', namespaces=nsmap):
+			polyid = '#' + bb.attrib['{'+nsmap['gml']+'}id']
+			vals = bb.xpath('.//gml:exterior/gml:LinearRing/gml:posList', namespaces=nsmap)
+			surf = [str2floats(v).reshape((-1,3)) for v in vals]
+			if options.bHeightZero:
+				for x in surf:
+					x[:,2] -= minheight
+			b.lod2roof[polyid] = surf
+			app = appParameterizedTexture.search_list( partex, polyid )
+			if app is not None:
+				if b.partex.imageURI is None:
+					b.partex = app
+				#elif b.partex.imageURI != app.imageURI:
+				#	print('error')
+		for bb in bld.xpath('.//bldg:boundedBy/bldg:WallSurface/bldg:lod2MultiSurface/gml:MultiSurface/gml:surfaceMember/gml:Polygon', namespaces=nsmap):
+			polyid = '#' + bb.attrib['{'+nsmap['gml']+'}id']
+			vals = bb.xpath('.//gml:exterior/gml:LinearRing/gml:posList', namespaces=nsmap)
+			surf = [str2floats(v).reshape((-1,3)) for v in vals]
+			if options.bHeightZero:
+				for x in surf:
+					x[:,2] -= minheight
+			b.lod2wall[polyid] = surf
+			app = appParameterizedTexture.search_list( partex, polyid )
+			if app is not None:
+				if b.partex.imageURI is None:
+					b.partex = app
+				#elif b.partex.imageURI != app.imageURI:
+				#	print('error')
+
+		return b
+
 	def loadFile(self,filename, options=ploptions()):
 		tree, root = super().loadFile(filename)
 		nsmap = self.removeNoneKeyFromDic(root.nsmap)
@@ -89,11 +210,11 @@ class plbldg(plobj):
 		partex = []
 		for app in tree.xpath('/core:CityModel/app:appearanceMember/app:Appearance/app:surfaceDataMember/app:ParameterizedTexture', namespaces=nsmap):
 			par = appParameterizedTexture()
-			for at in app.xpath('app:imageURI', namespaces=nsmap):
+			for at in app.xpath('.//app:imageURI', namespaces=nsmap):
 				par.imageURI = at.text
-			for at in app.xpath('app:target', namespaces=nsmap):
+			for at in app.xpath('.//app:target', namespaces=nsmap):
 				uri = at.attrib['uri']
-				colist = [str2floats(v).reshape((-1,2)) for v in at.xpath('app:TexCoordList/app:textureCoordinates', namespaces=nsmap)]
+				colist = [str2floats(v).reshape((-1,2)) for v in at.xpath('.//app:TexCoordList/app:textureCoordinates', namespaces=nsmap)]
 				maxnum = max(map(lambda x:x.shape[0],colist))
 				for cidx,co in enumerate(colist):
 					last = co[-1].reshape(-1,2)
@@ -106,123 +227,7 @@ class plbldg(plobj):
 		# scan cityObjectMember
 		blds = tree.xpath('/core:CityModel/core:cityObjectMember/bldg:Building', namespaces=nsmap)
 		for bld in blds:
-			b = Building()
-			# gml:id
-			b.id = bld.attrib['{'+nsmap['gml']+'}id']
-			# stringAttribute
-			stringAttributes = bld.xpath('gen:stringAttribute', namespaces=nsmap)
-			for at in stringAttributes:
-				b.attr[at.attrib['name']] = at.getchildren()[0].text
-			# genericAttributeSet
-			genericAttributeSets = bld.xpath('gen:genericAttributeSet', namespaces=nsmap)
-			for at in genericAttributeSets:
-				vals = dict()
-				for ch in at.getchildren():
-					vals[ ch.attrib['name'] ] = ch.getchildren()[0].text
-				b.attr[at.attrib['name']] = vals
-			# usage
-			for at in bld.xpath('bldg:usage', namespaces=nsmap):
-				b.usage = at.text
-			# measuredHeight
-			for at in bld.xpath('bldg:measuredHeight', namespaces=nsmap):
-				b.measuredHeight = at.text
-			# storeysAboveGround
-			for at in bld.xpath('bldg:storeysAboveGround', namespaces=nsmap):
-				b.storeysAboveGround = at.text
-			# storeysBelowGround
-			for at in bld.xpath('bldg:storeysBelowGround', namespaces=nsmap):
-				b.storeysBelowGround = at.text
-			# address
-			try:	# there are 2 names: 'xAL' and 'xal'..
-				for at in bld.xpath('bldg:address/core:Address/core:xalAddress/xAL:AddressDetails/xAL:Address', namespaces=nsmap):
-					b.address = at.text
-			except lxml.etree.XPathEvalError as e:
-				for at in bld.xpath('bldg:address/core:Address/core:xalAddress/xal:AddressDetails/xal:Address', namespaces=nsmap):
-					b.address = at.text
-			# buildingDetails
-			for at in bld.xpath('uro:buildingDetails/uro:BuildingDetails', namespaces=nsmap):
-				for ch in at.getchildren():
-					tag = ch.tag
-					tag = tag[ tag.rfind('}')+1: ]
-					b.buildingDetails[tag] = ch.text
-			# extendedAttribute
-			for at in bld.xpath('uro:extendedAttribute/uro:KeyValuePair', namespaces=nsmap):
-				ch = at.getchildren()
-				b.extendedAttribute[ch[0].text] = ch[1].text
-			# lod0RoofEdge
-			vals = bld.xpath('bldg:lod0RoofEdge/gml:MultiSurface/gml:surfaceMember/gml:Polygon/gml:exterior/gml:LinearRing/gml:posList', namespaces=nsmap)
-			b.lod0RoofEdge = [str2floats(v).reshape((-1,3)) for v in vals]
-			# lod1Solid
-			vals = bld.xpath('bldg:lod1Solid/gml:Solid/gml:exterior/gml:CompositeSurface/gml:surfaceMember/gml:Polygon/gml:exterior/gml:LinearRing/gml:posList', namespaces=nsmap)
-			b.lod1Solid = [str2floats(v).reshape((-1,3)) for v in vals]
-			minheight = 0
-			if options.bHeightZero:
-				# calc min height
-				minheight = 10000
-				for x in b.lod1Solid:
-					if minheight > np.min(x[:,2]):
-						minheight = np.min(x[:,2])
-				if b.storeysBelowGround is not None:
-					minheight = minheight + (int(b.storeysBelowGround) * _floorheight)
-				if minheight == 10000:
-					minheight = 0
-				for x in b.lod1Solid:
-					x[:,2] -= minheight
-			# lod2Solid
-			#  nothing to do for parsing <bldg:lod2Solid>
-			# lod2MultiSurface : Ground, Roof, Wall
-			for bb in bld.xpath('bldg:boundedBy/bldg:GroundSurface/bldg:lod2MultiSurface/gml:MultiSurface/gml:surfaceMember/gml:Polygon', namespaces=nsmap):
-				polyid = '#' + bb.attrib['{'+nsmap['gml']+'}id']
-				vals = bb.xpath('gml:exterior/gml:LinearRing/gml:posList', namespaces=nsmap)
-				surf = [str2floats(v).reshape((-1,3)) for v in vals]
-				if options.bHeightZero:
-					if minheight == 0:
-						# calc min height
-						minheight = 10000
-						for x in surf:
-							if minheight > np.min(x[:,2]):
-								minheight = np.min(x[:,2])
-						if b.storeysBelowGround is not None:
-							minheight = minheight + (int(b.storeysBelowGround) * _floorheight)
-						if minheight == 10000:
-							minheight = 0
-					for x in surf:
-						x[:,2] -= minheight
-				b.lod2ground[polyid] = surf
-				app = appParameterizedTexture.search_list( partex, polyid )
-				if app is not None:
-					if b.partex.imageURI is None:
-						b.partex = app
-					#elif b.partex.imageURI != app.imageURI:
-					#	print('error')
-			for bb in bld.xpath('bldg:boundedBy/bldg:RoofSurface/bldg:lod2MultiSurface/gml:MultiSurface/gml:surfaceMember/gml:Polygon', namespaces=nsmap):
-				polyid = '#' + bb.attrib['{'+nsmap['gml']+'}id']
-				vals = bb.xpath('gml:exterior/gml:LinearRing/gml:posList', namespaces=nsmap)
-				surf = [str2floats(v).reshape((-1,3)) for v in vals]
-				if options.bHeightZero:
-					for x in surf:
-						x[:,2] -= minheight
-				b.lod2roof[polyid] = surf
-				app = appParameterizedTexture.search_list( partex, polyid )
-				if app is not None:
-					if b.partex.imageURI is None:
-						b.partex = app
-					#elif b.partex.imageURI != app.imageURI:
-					#	print('error')
-			for bb in bld.xpath('bldg:boundedBy/bldg:WallSurface/bldg:lod2MultiSurface/gml:MultiSurface/gml:surfaceMember/gml:Polygon', namespaces=nsmap):
-				polyid = '#' + bb.attrib['{'+nsmap['gml']+'}id']
-				vals = bb.xpath('gml:exterior/gml:LinearRing/gml:posList', namespaces=nsmap)
-				surf = [str2floats(v).reshape((-1,3)) for v in vals]
-				if options.bHeightZero:
-					for x in surf:
-						x[:,2] -= minheight
-				b.lod2wall[polyid] = surf
-				app = appParameterizedTexture.search_list( partex, polyid )
-				if app is not None:
-					if b.partex.imageURI is None:
-						b.partex = app
-					#elif b.partex.imageURI != app.imageURI:
-					#	print('error')
+			b = self.createBuilding(bld, partex, nsmap, options)
 			self.buildings.append(b)
 		
 		# vertices, triangles
