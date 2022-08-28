@@ -5,6 +5,7 @@ import numpy as np
 import copy
 import os
 from lxml import etree
+from tqdm import tqdm
 
 class pldem(plobj):
 	def __init__(self,filename=None, options=ploptions()):
@@ -31,7 +32,7 @@ class pldem(plobj):
 		# convert to XYZ
 		posLists = copy.deepcopy(self.posLists)
 		usebit = []
-		for x in posLists:
+		for x in tqdm(posLists):
 			for yidx,y in enumerate(x):
 				bit = True
 				if options.div6toQuarter is not None:
