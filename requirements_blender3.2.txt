@@ -12,3 +12,4 @@ https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-0.15.
 #triangle
 
 py7zr
+tqdm
