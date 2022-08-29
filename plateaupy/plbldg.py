@@ -259,8 +259,8 @@ class plbldg(plobj):
 			b = self.createBuilding(bld, nsmap)
 			self.buildings.append(b)
 
-		def getMesh(mList, texture_file):
-			for m in mList:
+		def getMesh(texture_file):
+			for m in self.meshes:
 				if texture_file is None:
 					if m.texture_filename is None:
 						return m
@@ -271,7 +271,7 @@ class plbldg(plobj):
 			# no mesh
 			newMesh = plmesh()
 			newMesh.texture_filename = texture_file
-			mList.append(newMesh)
+			self.meshes.append(newMesh)
 			return newMesh
 
 		# vertices, triangles
@@ -281,10 +281,10 @@ class plbldg(plobj):
 			# if options.bUseLOD2texture and (not options.bUseLOD0):
 			# 	mesh = plmesh()
 			
-			meshList = []
+			# meshList = []
 			if options.bUseLOD0:
 				# LOD0
-				mesh = getMesh(meshList, None)
+				mesh = getMesh(None)
 				vertices, triangles = b.getLOD0polygons()
 				if vertices is not None and triangles is not None:
 					vstart = len(mesh.vertices)
@@ -295,7 +295,7 @@ class plbldg(plobj):
 
 				# ground
 				for key, value in b.lod2ground.items():
-					mesh = getMesh(meshList, value.paramTexture.cachePath if value.paramTexture is not None else None)
+					mesh = getMesh(value.paramTexture.cachePath if value.paramTexture is not None else None)
 					vertices = [ convertPolarToCartsian( *x ) for x in value.polygon[0] ]
 					res = earcut(np.array(vertices,dtype=np.int).flatten(), dim=3)
 					if len(res) > 0:
@@ -314,7 +314,7 @@ class plbldg(plobj):
 								mesh.triangle_material_ids.extend( [0]*len(triangles) )
 				# roof
 				for key, value in b.lod2roof.items():
-					mesh = getMesh(meshList, value.paramTexture.cachePath if value.paramTexture is not None else None)
+					mesh = getMesh(value.paramTexture.cachePath if value.paramTexture is not None else None)
 					vertices = [ convertPolarToCartsian( *x ) for x in value.polygon[0] ]
 					res = earcut(np.array(vertices,dtype=np.int).flatten(), dim=3)
 					if len(res) > 0:
@@ -333,7 +333,7 @@ class plbldg(plobj):
 							mesh.triangle_material_ids.extend( [0]*len(triangles) )
 				# wall
 				for key, value in b.lod2wall.items():
-					mesh = getMesh(meshList, value.paramTexture.cachePath if value.paramTexture is not None else None)
+					mesh = getMesh(value.paramTexture.cachePath if value.paramTexture is not None else None)
 					vertices = [ convertPolarToCartsian( *x ) for x in value.polygon[0] ]
 					res = earcut(np.array(vertices,dtype=np.int).flatten(), dim=3)
 					if len(res) > 0:
@@ -351,7 +351,7 @@ class plbldg(plobj):
 							mesh.triangle_material_ids.extend( [0]*len(triangles) )
 			else:
 				# LOD1
-				mesh = getMesh(meshList, None)
+				mesh = getMesh(None)
 				for plist in b.lod1Solid:
 					vertices = [ convertPolarToCartsian( *x ) for x in plist ]
 					res = earcut(np.array(vertices,dtype=np.int).flatten(), dim=3)
@@ -365,9 +365,11 @@ class plbldg(plobj):
 							mesh.triangle_uvs.extend( [ np.zeros((2)) for x in range(len(triangles)*3) ] )
 							mesh.triangle_material_ids.extend( [0]*len(triangles) )
 			if options.bUseLOD2texture:
-				self.meshes.extend(meshList)
+				# self.meshes.extend(meshList)
+				pass
 		if not options.bUseLOD2texture:
-			self.meshes.extend(meshList)
+			# self.meshes.extend(meshList)
+			pass
 
 		for mesh in self.meshes:
 			if len(mesh.triangle_uvs):
