@@ -23,7 +23,14 @@ class plmesh:
 		mesh.vertices = o3d.utility.Vector3dVector( self.vertices )
 		mesh.triangles = o3d.utility.Vector3iVector( self.triangles )
 		if self.texture_filename is not None and len(self.triangle_uvs) > 0:
-			mesh.textures = [o3d.io.read_image( self.texture_filename )]
+			textures = []
+			if type(self.texture_filename) is list:
+				# multiple textures
+				for filePath in self.texture_filename:
+					textures.append(o3d.io.read_image(filePath))
+			else:
+				textures = [o3d.io.read_image(self.texture_filename)]
+			mesh.textures = textures
 			mesh.triangle_uvs = o3d.utility.Vector2dVector( np.array(self.triangle_uvs) )
 			mesh.triangle_material_ids = o3d.utility.IntVector( np.array(self.triangle_material_ids, dtype=np.int32) )
 			#print( 'triangles = ', np.array(self.triangles).shape )
@@ -38,7 +45,7 @@ class plmesh:
 	
 	def to_Blender_Object(self, meshname, vbase=None):
 		import bpy
-		
+
 		namestr = meshname
 		mesh = bpy.data.meshes.new(name=namestr)
 		vertices = [ list(v) for v in self.vertices ]
@@ -49,29 +56,40 @@ class plmesh:
 		mesh.update(calc_edges=True)
 		obj = bpy.data.objects.new(name=namestr,object_data=mesh)
 
+		textures = self.texture_filename
+		if textures is not None and type(textures) is not list:
+			textures = [textures]
+
 		# set Texture
 		if self.texture_filename is not None:
-			print(f"texture_filename = {self.texture_filename}")
+			# print(f"texture_filename = {self.texture_filename}")
 
 			# Create uv laeyer
 			new_uv = mesh.uv_layers.new(name="UVMap")
-			print(len(new_uv.data), len(self.triangle_uvs))
+			# print(len(new_uv.data), len(self.triangle_uvs))
 			for idx, uv in enumerate(self.triangle_uvs):
 				new_uv.data[idx].uv = np.array(uv) * (1.0, -1.0)   # flip y
 
-			# Create material 
-			mat_name = "TextureMaterial"
-			mat = bpy.data.materials.new(mat_name)
+			# Create material
+			for texture in textures:
+				mat_name = texture
+				mat = bpy.data.materials.new(mat_name)
 
-			mat.use_nodes = True
-			bsdf = mat.node_tree.nodes["Principled BSDF"]
-			texImage = mat.node_tree.nodes.new('ShaderNodeTexImage')
-			texImage.image = bpy.data.images.load(os.path.abspath(self.texture_filename))
-			mat.node_tree.links.new(bsdf.inputs['Base Color'], texImage.outputs['Color'])
+				mat.use_nodes = True
+				bsdf = mat.node_tree.nodes["Principled BSDF"]
+				texImage = mat.node_tree.nodes.new('ShaderNodeTexImage')
+				texImage.image = bpy.data.images.load(os.path.abspath(texture))
+				mat.node_tree.links.new(bsdf.inputs['Base Color'], texImage.outputs['Color'])
 
-			# # Add material to object
-			obj.data.materials.append(mat)
+				# # Add material to object
+				obj.data.materials.append(mat)
 
+			# apply polygon material
+			for polygon, tex_id in zip(obj.data.polygons, self.triangle_material_ids):
+				try:
+					polygon.material_index = obj.data.materials.find(textures[tex_id])
+				except:
+					polygon.material_index = 0
 
 		return obj
 

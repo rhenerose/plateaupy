@@ -68,6 +68,7 @@ class appParameterizedTexture:
 		self.imageURI = None
 		self.cachePath = None
 		self.targets = dict()
+
 	@classmethod
 	def search_list(cls, applist, polyid):
 		for app in applist:
@@ -259,32 +260,27 @@ class plbldg(plobj):
 			b = self.createBuilding(bld, nsmap)
 			self.buildings.append(b)
 
-		def getMesh(texture_file):
-			for m in self.meshes:
-				if texture_file is None:
-					if m.texture_filename is None:
-						return m
-				else:
-					if m.texture_filename == texture_file:
-						return m
+		def getTextureIndex(mesh, file):
+			if mesh.texture_filename is None:
+				return 0
 
-			# no mesh
-			newMesh = plmesh()
-			newMesh.texture_filename = texture_file
-			self.meshes.append(newMesh)
-			return newMesh
+			if file is not  None and not file in mesh.texture_filename:
+				mesh.texture_filename.append(file)
+
+			return mesh.texture_filename.index(file) if file in mesh.texture_filename else None
+
 
 		# vertices, triangles
-		# if (not options.bUseLOD2texture) or options.bUseLOD0:
-		# 	mesh = plmesh()
+		if (not options.bUseLOD2texture) or options.bUseLOD0:
+			mesh = plmesh()
 		for b in self.buildings:
-			# if options.bUseLOD2texture and (not options.bUseLOD0):
-			# 	mesh = plmesh()
-			
+			if options.bUseLOD2texture and (not options.bUseLOD0):
+				mesh = plmesh()
+				mesh.texture_filename = []
+
 			# meshList = []
 			if options.bUseLOD0:
 				# LOD0
-				mesh = getMesh(None)
 				vertices, triangles = b.getLOD0polygons()
 				if vertices is not None and triangles is not None:
 					vstart = len(mesh.vertices)
@@ -295,7 +291,10 @@ class plbldg(plobj):
 
 				# ground
 				for key, value in b.lod2ground.items():
-					mesh = getMesh(value.paramTexture.cachePath if value.paramTexture is not None else None)
+					if value.paramTexture is None:
+						mat_index = 0
+					else:
+						mat_index = getTextureIndex(mesh, value.paramTexture.cachePath)
 					vertices = [ convertPolarToCartsian( *x ) for x in value.polygon[0] ]
 					res = earcut(np.array(vertices,dtype=np.int).flatten(), dim=3)
 					if len(res) > 0:
@@ -308,13 +307,16 @@ class plbldg(plobj):
 							# mesh.texture_filename = value.paramTexture.cachePath
 							if value.paramTexture is not None and key in value.paramTexture.targets.keys():
 								mesh.triangle_uvs.extend( [ value.paramTexture.targets[key][0,x] for x in triangles.reshape((-1)) ] )
-								mesh.triangle_material_ids.extend( [0]*len(triangles) )
+								mesh.triangle_material_ids.extend( [mat_index]*len(triangles) )
 							else:	# add dummy uvs, material_ids    (The texture can not appear if the numbers of triangles are different between triangles and them.)
 								mesh.triangle_uvs.extend( [ np.zeros((2)) for x in range(len(triangles)*3) ] )
 								mesh.triangle_material_ids.extend( [0]*len(triangles) )
 				# roof
 				for key, value in b.lod2roof.items():
-					mesh = getMesh(value.paramTexture.cachePath if value.paramTexture is not None else None)
+					if value.paramTexture is None:
+						mat_index = 0
+					else:
+						mat_index = getTextureIndex(mesh, value.paramTexture.cachePath)
 					vertices = [ convertPolarToCartsian( *x ) for x in value.polygon[0] ]
 					res = earcut(np.array(vertices,dtype=np.int).flatten(), dim=3)
 					if len(res) > 0:
@@ -327,13 +329,17 @@ class plbldg(plobj):
 							# mesh.texture_filename = value.paramTexture.cachePath
 							if value.paramTexture is not None and key in value.paramTexture.targets.keys():
 								mesh.triangle_uvs.extend( [ value.paramTexture.targets[key][0,x] for x in triangles.reshape((-1)) ] )
+								mesh.triangle_material_ids.extend( [mat_index]*len(triangles) )
 							else:
 								# no key (add dummy uv)
 								mesh.triangle_uvs.extend( np.zeros([triangles.size, 2]) )
-							mesh.triangle_material_ids.extend( [0]*len(triangles) )
+								mesh.triangle_material_ids.extend( [0]*len(triangles) )
 				# wall
 				for key, value in b.lod2wall.items():
-					mesh = getMesh(value.paramTexture.cachePath if value.paramTexture is not None else None)
+					if value.paramTexture is None:
+						mat_index = 0
+					else:
+						mat_index = getTextureIndex(mesh, value.paramTexture.cachePath)
 					vertices = [ convertPolarToCartsian( *x ) for x in value.polygon[0] ]
 					res = earcut(np.array(vertices,dtype=np.int).flatten(), dim=3)
 					if len(res) > 0:
@@ -345,13 +351,13 @@ class plbldg(plobj):
 						if options.bUseLOD2texture:
 							if value.paramTexture is not None and key in value.paramTexture.targets.keys():
 								mesh.triangle_uvs.extend( [ value.paramTexture.targets[key][0,x] for x in triangles.reshape((-1)) ] )
+								mesh.triangle_material_ids.extend( [mat_index]*len(triangles) )
 							else:
 								# no key (add dummy uv)
 								mesh.triangle_uvs.extend( np.zeros([triangles.size, 2]) )
-							mesh.triangle_material_ids.extend( [0]*len(triangles) )
+								mesh.triangle_material_ids.extend( [0]*len(triangles) )
 			else:
 				# LOD1
-				mesh = getMesh(None)
 				for plist in b.lod1Solid:
 					vertices = [ convertPolarToCartsian( *x ) for x in plist ]
 					res = earcut(np.array(vertices,dtype=np.int).flatten(), dim=3)
@@ -365,10 +371,10 @@ class plbldg(plobj):
 							mesh.triangle_uvs.extend( [ np.zeros((2)) for x in range(len(triangles)*3) ] )
 							mesh.triangle_material_ids.extend( [0]*len(triangles) )
 			if options.bUseLOD2texture:
-				# self.meshes.extend(meshList)
+				self.meshes.append(mesh)
 				pass
 		if not options.bUseLOD2texture:
-			# self.meshes.extend(meshList)
+			self.meshes.append(mesh)
 			pass
 
 		for mesh in self.meshes:
